@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Análisis técnico de tres métodos de búsqueda: secuencial, binaria y por funciones de hash. Estructura de Datos · Unidad 6.">
+  <title>Métodos de búsqueda · Estructura de Datos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-slide="0">
+
+  <!-- Obturador cinematográfico de apertura -->
+  <div class="shutter" aria-hidden="true">
+    <div class="half t"></div>
+    <div class="half b"></div>
+    <div class="beam"></div>
+  </div>
+
+  <!-- Grano de película + partículas -->
+  <div class="grain" aria-hidden="true"></div>
+  <canvas id="fx" aria-hidden="true"></canvas>
+
+  <!-- Cursor personalizado -->
+  <div class="cursor" id="cursor" aria-hidden="true"><span></span></div>
+
+  <!-- HUD superior -->
+  <header class="hud">
+    <div class="hud-left"><span class="hud-mark">◍</span> Estructura de Datos · Unidad 6 · Métodos de búsqueda</div>
+    <div class="hud-right">
+      <span class="tc"><i class="tc-dot"></i><span id="timecode">00:00:00:00</span></span>
+      <span class="hud-sep">|</span>
+      <span id="slide-count">01</span><span class="hud-sep">/</span>09
+    </div>
+  </header>
+
+  <!-- Barra de progreso -->
+  <div class="progress" aria-hidden="true"><div class="progress-bar" id="progress-bar"></div></div>
+
+  <!-- Índice lateral de navegación -->
+  <nav class="rail" id="rail" aria-label="Índice de diapositivas"></nav>
+
+  <!-- Mazo horizontal -->
+  <div class="deck" id="deck">
+    <div class="track" id="track">
+
+      <!-- 00 · PORTADA -->
+      <section class="slide" data-accent="purple" data-num="01" id="s0">
+        <div class="slide-inner cover">
+          <p class="kicker rv" style="--i:0">Estructura de Datos · Unidad 6</p>
+          <h1 class="cover-title">
+            <span class="line rv" style="--i:1"><span class="mask">TRES MÉTODOS</span></span>
+            <span class="line rv" style="--i:2"><span class="mask">DE <em>búsqueda</em></span></span>
+          </h1>
+          <p class="cover-sub rv" style="--i:3">
+            Análisis comparativo de la búsqueda secuencial, la búsqueda binaria
+            y las funciones de hash.<br>
+            <strong>Complejidades: O(n) · O(log n) · O(1)</strong>
+          </p>
+          <div class="id-card rv" style="--i:4" data-magnet>
+            <span class="id-photo">
+              <span class="id-initials">BS</span>
+              <img src="foto.jpg" alt="Foto de Brian Soto" onerror="this.remove()">
+            </span>
+            <span class="id-text">
+              <b>Brian Soto</b>
+              <span>N.C. 25410134</span>
+            </span>
+          </div>
+          <div class="cover-tags rv" style="--i:5">
+            <span>O(n) — lineal</span><span>O(log n) — logarítmica</span><span>O(1) — constante</span>
+          </div>
+        </div>
+        <svg class="reticle" viewBox="0 0 600 600" aria-hidden="true">
+          <g class="ret-a">
+            <circle cx="300" cy="300" r="252" fill="none" stroke="rgba(183,148,255,0.5)" stroke-width="1" stroke-dasharray="4 10"/>
+            <circle cx="300" cy="300" r="196" fill="none" stroke="rgba(139,92,246,0.75)" stroke-width="1.4"/>
+          </g>
+          <g class="ret-b">
+            <circle cx="300" cy="300" r="140" fill="none" stroke="rgba(244,243,248,0.35)" stroke-width="1" stroke-dasharray="46 14"/>
+            <path d="M300 34 v56 M300 510 v56 M34 300 h56 M510 300 h56" stroke="rgba(183,148,255,0.7)" stroke-width="1.6"/>
+            <path d="M300 240 v120 M240 300 h120" stroke="rgba(244,243,248,0.5)" stroke-width="1"/>
+            <circle cx="300" cy="300" r="6" fill="#8b5cf6"/>
+          </g>
+          <text x="300" y="592" text-anchor="middle" class="ret-txt">REF · UNIDAD 06 · SEC/BIN/HASH</text>
+        </svg>
+      </section>
+
+      <!-- 01 · PLANTEAMIENTO -->
+      <section class="slide" data-accent="lilac" data-num="02" id="s1">
+        <div class="slide-inner two-col">
+          <div class="col-text">
+            <p class="kicker rv" style="--i:0">01 — Planteamiento</p>
+            <h2>El problema de la <em>búsqueda</em></h2>
+            <p class="body rv" style="--i:2">
+              La búsqueda consiste en determinar si un elemento existe dentro de una
+              estructura de datos y, en caso afirmativo, <strong>localizar su posición</strong>.
+              Es una operación fundamental en motores de búsqueda, sistemas de bases de
+              datos, compiladores y estructuras en memoria.
+            </p>
+            <p class="body rv" style="--i:3">
+              El rendimiento de un algoritmo de búsqueda se expresa mediante su
+              <strong>complejidad temporal</strong>: mejor caso, peor caso y caso promedio.
+              La selección del método adecuado condiciona la eficiencia global del sistema.
+            </p>
+            <div class="defs rv" style="--i:4">
+              <div class="def"><b>Elemento</b><span>dato que se localiza dentro de la estructura</span></div>
+              <div class="def"><b>Clave</b><span>valor identificador del elemento buscado</span></div>
+              <div class="def"><b>Comparación</b><span>operación de igualdad entre dos claves</span></div>
+              <div class="def"><b>Complejidad</b><span>costo medible en tiempo y espacio</span></div>
+            </div>
+            <p class="note rv" style="--i:5">
+              Todo algoritmo de búsqueda debe garantizar corrección (encuentra el elemento
+              si existe) y completitud (termina en un tiempo finito).
+            </p>
+          </div>
+          <div class="col-cards">
+            <article class="door rv" style="--i:2" data-tilt>
+              <span class="door-num">01</span>
+              <h3>Búsqueda secuencial</h3>
+              <p>Recorre la estructura elemento por elemento hasta localizar el objetivo o alcanzar el final.</p>
+              <span class="door-tag">O(n)</span>
+            </article>
+            <article class="door rv" style="--i:3" data-tilt>
+              <span class="door-num">02</span>
+              <h3>Búsqueda binaria</h3>
+              <p>Compara contra el elemento central y descarta la mitad del espacio de búsqueda en cada iteración.</p>
+              <span class="door-tag">O(log n)</span>
+            </article>
+            <article class="door rv" style="--i:4" data-tilt>
+              <span class="door-num">03</span>
+              <h3>Funciones de hash</h3>
+              <p>La función de dispersión calcula directamente la posición de almacenamiento del elemento.</p>
+              <span class="door-tag">O(1)</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 · SECUENCIAL -->
+      <section class="slide" data-accent="purple" data-num="03" id="s2">
+        <div class="slide-inner">
+          <div class="head-row">
+            <div>
+              <p class="kicker rv" style="--i:0">02 — Búsqueda secuencial</p>
+              <h2>Recorrido lineal</h2>
+            </div>
+            <div class="big-o rv" style="--i:2">O(<em>n</em>)</div>
+          </div>
+          <div class="two-col alg">
+            <div class="col-text">
+              <p class="body rv" style="--i:2">
+                La búsqueda secuencial examina los elementos en orden, uno por uno,
+                hasta localizar el objetivo o <strong>agotar la estructura</strong>.
+                No requiere que los datos estén previamente ordenados.
+              </p>
+              <p class="body rv" style="--i:3">
+                Su complejidad en el peor caso es <strong>O(n)</strong>, equivalente al
+                número de elementos de la colección; en el mejor caso, si el objetivo
+                ocupa la primera posición, es <strong>O(1)</strong>.
+              </p>
+              <div class="mini-cards rv" style="--i:4">
+                <div class="mini"><b>1</b><span>mejor caso O(1)</span></div>
+                <div class="mini"><b>n</b><span>peor caso O(n)</span></div>
+                <div class="mini"><b>0</b><span>sin requisito de orden</span></div>
+              </div>
+              <p class="note rv" style="--i:5">Aplicable a listas cortas, implementaciones con centinela y como método auxiliar en algoritmos híbridos.</p>
+            </div>
+            <div class="side">
+              <div class="viz rv" style="--i:3">
+                <div class="viz-head"><span class="viz-label">FIG. 01 · Recorrido secuencial</span><span class="viz-live" id="scan-status">● evaluando</span></div>
+                <canvas id="cv-scan" height="240"></canvas>
+                <div class="viz-foot"><span>n = 20 · iteraciones: <b id="scan-count">0</b></span><span>objetivo: <b id="scan-target">—</b></span></div>
+              </div>
+              <div class="code rv" style="--i:4">
+                <div class="code-head"><span>pseudocódigo</span><span>alg. 01 · O(n)</span></div>
+                <pre class="code-body"><span class="fn">secuencial</span>(A[0..n−1], x):
+  <span class="kw">para</span> i ← 0 .. n−1 <span class="kw">hacer</span>
+    <span class="kw">si</span> A[i] = x: <span class="kw">devolver</span> i
+  <span class="kw">devolver</span> −1          <span class="cm">// no encontrado</span></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 03 · BINARIA -->
+      <section class="slide" data-accent="lilac" data-num="04" id="s3">
+        <div class="slide-inner">
+          <div class="head-row">
+            <div>
+              <p class="kicker rv" style="--i:0">03 — Búsqueda binaria</p>
+              <h2>División sucesiva del <em>espacio</em></h2>
+            </div>
+            <div class="big-o rv" style="--i:2">O(<em>log n</em>)</div>
+          </div>
+          <div class="two-col alg">
+            <div class="col-text">
+              <p class="body rv" style="--i:2">
+                La búsqueda binaria localiza el <strong>elemento central</strong> y determina
+                en qué mitad se encuentra el objetivo, descartando la otra mitad en cada
+                iteración. El espacio de búsqueda se reduce geométricamente.
+              </p>
+              <p class="body rv" style="--i:3">
+                Requiere datos <strong>ordenados</strong>. Con 10⁶ elementos bastan
+                aproximadamente <strong>20 comparaciones</strong>, ya que n se reduce a log₂ n.
+              </p>
+              <div class="mini-cards rv" style="--i:4">
+                <div class="mini"><b>~20</b><span>para 10⁶ datos</span></div>
+                <div class="mini"><b>n/2</b><span>descartados</span></div>
+                <div class="mini"><b>✔</b><span>requiere orden</span></div>
+              </div>
+              <p class="note rv" style="--i:5">Fundamento de los índices de bases de datos y de las estructuras ordenadas en memoria.</p>
+            </div>
+            <div class="side">
+              <div class="viz rv" style="--i:3">
+                <div class="viz-head"><span class="viz-label">FIG. 02 · Espacio de búsqueda</span><span class="viz-live" id="bin-status">● calculando</span></div>
+                <canvas id="cv-bin" height="240"></canvas>
+                <div class="viz-foot"><span>comparaciones: <b id="bin-count">0</b></span><span>ventana: <b id="bin-window">1024</b></span></div>
+              </div>
+              <div class="code rv" style="--i:4">
+                <div class="code-head"><span>pseudocódigo</span><span>alg. 02 · O(log n)</span></div>
+                <pre class="code-body"><span class="fn">binaria</span>(A[0..n−1], x):
+  izq ← 0, der ← n−1
+  <span class="kw">mientras</span> izq ≤ der <span class="kw">hacer</span>
+    med ← ⌊(izq + der) / 2⌋
+    <span class="kw">si</span> A[med] = x: <span class="kw">devolver</span> med
+    <span class="kw">si</span> x &lt; A[med]: der ← med−1  <span class="kw">sino</span>: izq ← med+1
+  <span class="kw">devolver</span> −1</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 · HASH -->
+      <section class="slide" data-accent="purple" data-num="05" id="s4">
+        <div class="slide-inner">
+          <div class="head-row">
+            <div>
+              <p class="kicker rv" style="--i:0">04 — Funciones de hash</p>
+              <h2>Acceso directo por <em>clave</em></h2>
+            </div>
+            <div class="big-o rv" style="--i:2">O(<em>1</em>) <small>promedio</small></div>
+          </div>
+          <div class="two-col alg">
+            <div class="col-text">
+              <p class="body rv" style="--i:2">
+                Una <strong>función de hash</strong> transforma la clave en un índice dentro
+                de la tabla de dispersión. No existe recorrido: se calcula la posición y se
+                accede directamente al casillero correspondiente.
+              </p>
+              <p class="body rv" style="--i:3">
+                Cuando dos claves producen el mismo índice se produce una
+                <strong>colisión</strong>, resoltable mediante listas enlazadas o direccionamiento
+                abierto. En el caso promedio, el acceso es de <strong>complejidad constante</strong>.
+              </p>
+              <div class="mini-cards rv" style="--i:4">
+                <div class="mini"><b>1</b><span>acceso promedio</span></div>
+                <div class="mini"><b>±</b><span>colisiones en cadena</span></div>
+                <div class="mini"><b>✔</b><span>sin requisito de orden</span></div>
+              </div>
+              <p class="note rv" style="--i:5">
+                Técnicas de resolución de colisiones: encadenamiento, direccionamiento
+                lineal, cuadrático y doble dispersión.
+              </p>
+            </div>
+            <div class="side">
+              <div class="viz rv" style="--i:3">
+                <div class="viz-head"><span class="viz-label">FIG. 03 · Tabla de dispersión</span><span class="viz-live" id="hash-status">● construyendo</span></div>
+                <canvas id="cv-hash" height="240"></canvas>
+                <div class="viz-foot"><span>m = 4 casilleros</span><span>colisiones: <b id="hash-col">0</b></span></div>
+              </div>
+              <div class="code rv" style="--i:4">
+                <div class="code-head"><span>pseudocódigo</span><span>alg. 03 · O(1)</span></div>
+                <pre class="code-body"><span class="fn">insertar</span>(T[0..m−1], k, v):
+  i ← h(k) mod m
+  <span class="kw">si</span> T[i] = ∅: T[i] ← (k, v)
+  <span class="kw">sino</span>: enlazar (k, v)      <span class="cm">// colisión</span>
+
+<span class="fn">buscar</span>(T, k): i ← h(k) mod m; <span class="kw">devolver</span> T[i]</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 05 · COMPARATIVA -->
+      <section class="slide" data-accent="white" data-num="06" id="s5">
+        <div class="slide-inner">
+          <p class="kicker rv" style="--i:0">05 — Comparativa interactiva</p>
+          <h2>Mismo objetivo, <em>tres estrategias</em></h2>
+          <p class="body narrow rv" style="--i:2">
+            Interfaz de análisis: la complejidad secuencial crece linealmente con el tamaño
+            de la entrada, mientras que la binaria crece logarítmicamente y la hash permanece constante.
+          </p>
+
+          <div class="cmp rv" style="--i:3">
+            <div class="cmp-slider">
+              <label for="size-range">Tamaño de la entrada n</label>
+              <input type="range" id="size-range" min="10" max="1000000" value="1000" step="10">
+              <output id="size-out">1 000</output>
+            </div>
+            <div class="cmp-bars">
+              <div class="cmp-row" data-kind="seq">
+                <span class="cmp-name">Secuencial</span>
+                <div class="cmp-track"><div class="cmp-fill" id="bar-seq"></div></div>
+                <span class="cmp-val" id="val-seq">1 000</span>
+              </div>
+              <div class="cmp-row" data-kind="bin">
+                <span class="cmp-name">Binaria</span>
+                <div class="cmp-track"><div class="cmp-fill" id="bar-bin"></div></div>
+                <span class="cmp-val" id="val-bin">10</span>
+              </div>
+              <div class="cmp-row" data-kind="hash">
+                <span class="cmp-name">Hash</span>
+                <div class="cmp-track"><div class="cmp-fill" id="bar-hash"></div></div>
+                <span class="cmp-val" id="val-hash">1</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap rv" style="--i:4">
+            <table class="props">
+              <thead>
+                <tr><th>Propiedad</th><th>Secuencial</th><th>Binaria</th><th>Hash</th></tr>
+              </thead>
+              <tbody>
+                <tr style="--r:0"><td>Requiere orden</td><td>No</td><td>Sí</td><td>No</td></tr>
+                <tr style="--r:1"><td>Mejor caso</td><td>O(1)</td><td>O(1)</td><td>O(1)</td></tr>
+                <tr style="--r:2"><td>Peor caso</td><td>O(n)</td><td>O(log n)</td><td>O(n)</td></tr>
+                <tr style="--r:3"><td>Caso promedio</td><td>O(n)</td><td>O(log n)</td><td>O(1)</td></tr>
+                <tr style="--r:4"><td>Memoria auxiliar</td><td>O(1)</td><td>O(1)</td><td>O(n)</td></tr>
+              </tbody>
+            </table>
+            <p class="table-src">Análisis asintótico estándar · notación O de Landau</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 06 · APLICACIONES -->
+      <section class="slide" data-accent="lilac" data-num="07" id="s6">
+        <div class="slide-inner">
+          <p class="kicker rv" style="--i:0">06 — Aplicaciones</p>
+          <h2>Implementaciones en <em>sistemas reales</em></h2>
+          <div class="real-grid">
+            <article class="real-card rv" style="--i:2" data-tilt>
+              <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><path class="g-stroke" d="M10 12 h18 a6 6 0 0 1 6 6 v34 a6 6 0 0 0-6-6 H10 Z"/><path class="g-stroke" d="M54 12 H36 a6 6 0 0 0-6 6 v34 a6 6 0 0 1 6-6 h18 Z"/><path class="g-stroke" d="M20 26 h8 M20 34 h8 M36 26 h8 M36 34 h8"/></svg>
+              <h3>Índice de un libro</h3>
+              <p>El índice remite a un rango ordenado de páginas; la localización final se resuelve mediante búsqueda binaria sobre ese rango.</p>
+              <span class="real-tag">binaria</span>
+            </article>
+            <article class="real-card rv" style="--i:3" data-tilt>
+              <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><rect class="g-stroke" x="16" y="6" width="32" height="52" rx="6"/><path class="g-stroke" d="M26 12 h12 M32 48 h0.1"/><path class="g-stroke" d="M22 24 h20 M22 32 h20 M22 40 h12"/></svg>
+              <h3>Directorio telefónico</h3>
+              <p>Cada entrada se indexa por su inicial: la clave determina directamente la posición de acceso dentro del directorio.</p>
+              <span class="real-tag">hash</span>
+            </article>
+            <article class="real-card rv" style="--i:4" data-tilt>
+              <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><path class="g-stroke" d="M8 20 a16 16 0 0 1 32 0 a16 16 0 0 1-32 0"/><path class="g-stroke" d="M40 20 h10 a6 6 0 0 1 6 6 v6 a6 6 0 0 1-6 6 H40"/><path class="g-stroke" d="M8 44 h48 M8 52 h34"/></svg>
+              <h3>Caché del navegador</h3>
+              <p>Los recursos consultados se almacenan bajo su dirección; la recuperación corresponde a un acceso directo, no a un recorrido.</p>
+              <span class="real-tag">hash</span>
+            </article>
+            <article class="real-card rv" style="--i:5" data-tilt>
+              <svg class="glyph" viewBox="0 0 64 64" aria-hidden="true"><path class="g-stroke" d="M8 8 h48 v48 H8 Z"/><path class="g-stroke" d="M8 24 h48 M8 40 h48 M24 8 v48 M40 8 v48"/><circle class="g-fill" cx="32" cy="32" r="5"/></svg>
+              <h3>Mapa de un videojuego</h3>
+              <p>El mundo se representa como una matriz; la coordenada de celda se resuelve mediante acceso directo por hash espacial.</p>
+              <span class="real-tag">hash espacial</span>
+            </article>
+          </div>
+          <p class="note rv" style="--i:6">
+            Otros ámbitos de aplicación: índices B-tree en bases de datos, tablas de símbolos
+            en compiladores, autocompletado, sistemas de archivos y cachés de CPU.
+          </p>
+        </div>
+      </section>
+
+      <!-- 07 · CONCLUSIONES -->
+      <section class="slide" data-accent="purple" data-num="08" id="s7">
+        <div class="slide-inner closing">
+          <p class="kicker rv" style="--i:0">07 — Conclusiones</p>
+          <h2>Criterios de <em>selección</em></h2>
+          <div class="concl">
+            <article class="concl-card rv" style="--i:2" data-tilt>
+              <span class="concl-tag">O(n)</span>
+              <h3>Búsqueda secuencial</h3>
+              <p>Recomendada cuando la colección es pequeña, no está ordenada o se recorre una sola vez. Implementación directa, sin estructura auxiliar.</p>
+            </article>
+            <article class="concl-card rv" style="--i:3" data-tilt>
+              <span class="concl-tag">O(log n)</span>
+              <h3>Búsqueda binaria</h3>
+              <p>Requiere orden previo; idónea para consultas repetidas sobre colecciones grandes y estáticas. Costo marginal por consulta.</p>
+            </article>
+            <article class="concl-card rv" style="--i:4" data-tilt>
+              <span class="concl-tag">O(1)</span>
+              <h3>Funciones de hash</h3>
+              <p>Ideal cuando las claves son conocidas y se requiere acceso próximo a constante. Exige una función de dispersión bien distribuida.</p>
+            </article>
+          </div>
+          <p class="note center rv" style="--i:5">
+            En la práctica, los sistemas híbridos combinan métodos: hash para el acceso directo
+            y búsqueda binaria dentro de los conjuntos de colisión ordenados.
+          </p>
+          <div class="credits rv" style="--i:6">
+            <div class="author-chip big">
+              <span class="author-dot"></span>
+              Autor: <b>Brian Soto</b> · N.C. <b>25410134</b>
+            </div>
+            <button class="restart" id="restart" data-magnet>↺ Reiniciar presentación</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 08 · REFERENCIAS -->
+      <section class="slide" data-accent="lilac" data-num="09" id="s8">
+        <div class="slide-inner">
+          <p class="kicker rv" style="--i:0">08 — Referencias</p>
+          <h2>Referencias <em>bibliográficas</em></h2>
+          <ol class="refs">
+            <li class="rv" style="--i:2"><b>Tanenbaum, A. S.</b> (2020). <em>Estructuras de Datos y Algoritmos</em>. 2.ª ed. Pearson Educación.</li>
+            <li class="rv" style="--i:3"><b>Cormen, T. H., Leiserson, C. E., Rivest, R. L. & Stein, C.</b> (2022). <em>Introduction to Algorithms</em>. 4.ª ed. MIT Press.</li>
+            <li class="rv" style="--i:4"><b>Sedgewick, R. & Wayne, K.</b> (2011). <em>Algorithms</em>. 4.ª ed. Addison-Wesley.</li>
+            <li class="rv" style="--i:5"><b>Knuth, D. E.</b> (1998). <em>The Art of Computer Programming, Vol. 3: Sorting and Searching</em>. 3.ª ed. Addison-Wesley.</li>
+            <li class="rv" style="--i:6"><b>Goodrich, M. T. & Tamassia, R.</b> (2014). <em>Data Structures and Algorithms in Java</em>. 6.ª ed. Wiley.</li>
+            <li class="rv" style="--i:7"><b>Carrano, F. M.</b> (2012). <em>Data Structures and Abstractions with Java</em>. 3.ª ed. Pearson.</li>
+            <li class="rv" style="--i:8"><b>Horowitz, E., Sahni, S. & Mehta, D.</b> (2015). <em>Fundamentals of Data Structures in C++</em>. 2.ª ed. Pearson.</li>
+            <li class="rv" style="--i:9"><b>Notas de clase</b> — Estructura de Datos, Unidad 6. <em>Mtra. Myrna Villegas Gaytán</em>.</li>
+          </ol>
+          <p class="note rv" style="--i:10">
+            Documento elaborado como material de apoyo académico para la Unidad 6 ·
+            Estructura de Datos · Ciclo escolar 2025–2026.
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Panel de transición -->
+  <div class="wipe" id="wipe" aria-hidden="true"></div>
+
+  <!-- Pista de navegación -->
+  <div class="hint" id="hint">use ← → para navegar</div>
+
+  <script src="script.js"></script>
+</body>
+</html>
