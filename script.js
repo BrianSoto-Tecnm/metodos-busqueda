@@ -661,6 +661,110 @@
   };
 
   /* ================================================================
+     11.5 · EASTER EGG — código Konami + confeti
+     ================================================================ */
+  const toastEl = $("#toast");
+  let toastTimer;
+  function toast(html, ms = 3600) {
+    toastEl.innerHTML = html;
+    toastEl.classList.add("on");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove("on"), ms);
+  }
+
+  const partyCv = $("#party");
+  const pctx = partyCv.getContext("2d");
+  let confetti = [];
+  let partyUntil = 0;
+
+  function fitParty() {
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    partyCv.width = innerWidth * dpr; partyCv.height = innerHeight * dpr;
+    partyCv.style.width = innerWidth + "px"; partyCv.style.height = innerHeight + "px";
+    pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  fitParty();
+  window.addEventListener("resize", fitParty);
+
+  const PARTY_COLORS = ["#8b5cf6", "#b794ff", "#f4f3f8", "#4c1d95", "#ffe9a8", "#7ee8c7"];
+
+  function launchConfetti(amount = 160) {
+    for (let i = 0; i < amount; i++) {
+      confetti.push({
+        x: Math.random() * innerWidth,
+        y: -20 - Math.random() * innerHeight * 0.5,
+        w: 5 + Math.random() * 7,
+        h: 8 + Math.random() * 9,
+        vx: (Math.random() - 0.5) * 2.4,
+        vy: 1.6 + Math.random() * 3.4,
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.24,
+        c: PARTY_COLORS[(Math.random() * PARTY_COLORS.length) | 0],
+        sway: Math.random() * Math.PI * 2
+      });
+    }
+  }
+
+  function drawParty(dt, now) {
+    if (!confetti.length) { pctx.clearRect(0, 0, innerWidth, innerHeight); return; }
+    pctx.clearRect(0, 0, innerWidth, innerHeight);
+    const fading = now > partyUntil;
+    for (const p of confetti) {
+      p.sway += 0.08;
+      p.x += p.vx + Math.sin(p.sway) * 0.7;
+      p.y += p.vy;
+      p.rot += p.vr;
+      if (p.y > innerHeight + 30) { p.y = -20; p.x = Math.random() * innerWidth; }
+      pctx.save();
+      pctx.translate(p.x, p.y);
+      pctx.rotate(p.rot);
+      pctx.globalAlpha = fading ? Math.max(0, (partyUntil + 1400 - now) / 1400) : 1;
+      pctx.fillStyle = p.c;
+      pctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      pctx.restore();
+    }
+    pctx.globalAlpha = 1;
+    if (fading && now > partyUntil + 1400) confetti = [];
+  }
+
+  const FUN_LINES = [
+    "🎉 <b>¡Código Konami detectado!</b> Modo fiesta activado.",
+    "🎊 <b>¡Encontraste el secreto!</b> Los algoritmos también celebran.",
+    "✨ <b>¡Modo fiesta!</b> O(1) en alegría."
+  ];
+  let funIdx = 0;
+
+  function startParty() {
+    launchConfetti();
+    partyUntil = performance.now() + 6000;
+    toast(FUN_LINES[funIdx % FUN_LINES.length], 4200);
+    funIdx++;
+  }
+
+  // código Konami
+  const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+  let kIdx = 0;
+  window.addEventListener("keydown", (e) => {
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (k === KONAMI[kIdx]) {
+      kIdx++;
+      if (kIdx === KONAMI.length) { kIdx = 0; startParty(); }
+    } else {
+      kIdx = k === KONAMI[0] ? 1 : 0;
+    }
+  });
+
+  // clics rápidos en el sello → también activa la fiesta
+  let sealClicks = 0, sealTimer;
+  const seal = $(".id-seal");
+  if (seal) seal.addEventListener("click", () => {
+    sealClicks++;
+    clearTimeout(sealTimer);
+    sealTimer = setTimeout(() => (sealClicks = 0), 900);
+    if (sealClicks >= 3) { sealClicks = 0; startParty(); }
+  });
+
+  /* ================================================================
      12 · BUCLE PRINCIPAL
      ================================================================ */
   let last = performance.now();
@@ -672,6 +776,7 @@
     if (index === 2) drawScan(dt);
     if (index === 3) drawBin(dt);
     if (index === 4) drawHash(dt);
+    drawParty(dt, now);
     requestAnimationFrame(loop);
   }
 
